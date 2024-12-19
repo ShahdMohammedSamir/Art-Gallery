@@ -4,6 +4,103 @@ import Title from "../components/Title";
 import ProductItem from "../components/ProductItem";
 import { assets } from "../assets/assets";
 
+// Base Filter Component Interface
+class FilterComponent {
+  constructor(options, selectedValues, onChange) {
+    this.options = options;
+    this.selectedValues = selectedValues;
+    this.onChange = onChange;
+  }
+
+  render() {
+    throw new Error("Render method not implemented in FilterComponent");
+  }
+}
+
+// Category Filter
+class CategoryFilter extends FilterComponent {
+  render() {
+    return (
+      <div className="border border-gray-300 pl-5 py-3 mt-6">
+        <p className="mb-3 text-sm font-medium">CATEGORIES</p>
+        <div className="flex flex-col gap-2 text-sm font-light text-gray-700">
+          {this.options.map((option) => (
+            <p key={option} className="flex gap-2">
+              <input
+                className="w-3"
+                type="checkbox"
+                value={option}
+                onChange={() => this.onChange(option)}
+                checked={this.selectedValues.includes(option)}
+              />{" "}
+              {option}
+            </p>
+          ))}
+        </div>
+      </div>
+    );
+  }
+}
+
+// SubCategory Filter
+class SubCategoryFilter extends FilterComponent {
+  render() {
+    return (
+      <div className="border border-gray-300 pl-5 py-3 my-5">
+        <p className="mb-3 text-sm font-medium">TYPE</p>
+        <div className="flex flex-col gap-2 text-sm font-light text-gray-700">
+          {this.options.map((option) => (
+            <p key={option} className="flex gap-2">
+              <input
+                className="w-3"
+                type="checkbox"
+                value={option}
+                onChange={() => this.onChange(option)}
+                checked={this.selectedValues.includes(option)}
+              />{" "}
+              {option}
+            </p>
+          ))}
+        </div>
+      </div>
+    );
+  }
+}
+
+// Price Range Filter
+class PriceRangeFilter extends FilterComponent {
+  render() {
+    return (
+      <div className="border border-gray-300 pl-5 py-3 my-5">
+        <p className="mb-3 text-sm font-medium">PRICE RANGE</p>
+        <input
+          type="range"
+          min="0"
+          max="1000"
+          onChange={(e) => this.onChange(e.target.value)}
+          className="w-full"
+        />
+      </div>
+    );
+  }
+}
+
+// Factory to Create Filter Components
+class FilterFactory {
+  static createFilter(type, options, selectedValues, onChange) {
+    switch (type) {
+      case "category":
+        return new CategoryFilter(options, selectedValues, onChange);
+      case "subcategory":
+        return new SubCategoryFilter(options, selectedValues, onChange);
+      case "priceRange":
+        return new PriceRangeFilter(options, selectedValues, onChange);
+      default:
+        return null;
+    }
+  }
+}
+
 const Collection = () => {
   const { search, setSearch } = useContext(ShopContext);
   const [products, setProducts] = useState([]);
@@ -14,7 +111,7 @@ const Collection = () => {
   const [subCategory, setSubCategory] = useState([]);
   const [sortType, setSortType] = useState("relavent");
   const [showFilter, setShowFilter] = useState(true);
-  const [showSearch, setShowSearch] = useState(false); // state to control search visibility
+  const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -30,9 +127,7 @@ const Collection = () => {
         const uniqueCategories = [...new Set(data.map((item) => item.category))];
         setCategories(uniqueCategories);
 
-        const uniqueSubCategories = [
-          ...new Set(data.map((item) => item.subCategory)),
-        ];
+        const uniqueSubCategories = [...new Set(data.map((item) => item.subCategory))];
         setSubCategories(uniqueSubCategories);
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -131,55 +226,23 @@ const Collection = () => {
           />
         </p>
 
-        {/* Category Filter */}
-        <div
-          className={`border border-gray-300 pl-5 py-3 mt-6 ${showFilter ? "" : "hidden"} sm:block`}
-        >
-          <p className="mb-3 text-sm font-medium">CATEGORIES</p>
-          <div className="flex flex-col gap-2 text-sm font-light text-gray-700">
-            {categories.map((cat) => (
-              <p key={cat} className="flex gap-2">
-                <input
-                  className="w-3"
-                  type="checkbox"
-                  value={cat}
-                  onChange={() => toggleCategory(cat)}
-                  checked={category.includes(cat)}
-                />{" "}
-                {cat}
-              </p>
-            ))}
-          </div>
-        </div>
-
-        {/* SubCategory Filter */}
-        <div
-          className={`border border-gray-300 pl-5 py-3 my-5 ${showFilter ? "" : "hidden"} sm:block`}
-        >
-          <p className="mb-3 text-sm font-medium">TYPE</p>
-          <div className="flex flex-col gap-2 text-sm font-light text-gray-700">
-            {subCategories.map((subCat) => (
-              <p key={subCat} className="flex gap-2">
-                <input
-                  className="w-3"
-                  type="checkbox"
-                  value={subCat}
-                  onChange={() => toggleSubCategory(subCat)}
-                  checked={subCategory.includes(subCat)}
-                />{" "}
-                {subCat}
-              </p>
-            ))}
-          </div>
-        </div>
+        {showFilter && (
+          <>
+            {FilterFactory.createFilter("category", categories, category, toggleCategory)?.render()}
+            {FilterFactory.createFilter("subcategory", subCategories, subCategory, toggleSubCategory)?.render()}
+          </>
+        )}
       </div>
 
       {/* Right Section - Products */}
-      <div className="flex-1 ">
+      <div className="flex-1">
         <div className="flex justify-between text-base sm:text-2xl mb-4">
-          <Title text1={getCollectionHeadline()} text2="" style={{ fontSize: '1.25rem', fontWeight: '600' }} />
+          <Title
+            text1={getCollectionHeadline()}
+            text2=""
+            style={{ fontSize: "1.25rem", fontWeight: "600" }}
+          />
 
-          {/* Conditionally render the Search Input */}
           {showSearch && (
             <input
               type="text"
@@ -190,7 +253,6 @@ const Collection = () => {
             />
           )}
 
-          {/* Sort Dropdown */}
           <select
             onChange={(e) => setSortType(e.target.value)}
             className="border-2 border-gray-300 text-sm px-2"
@@ -201,7 +263,6 @@ const Collection = () => {
           </select>
         </div>
 
-        {/* Product Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {filterProducts.map((product) => (
             <ProductItem key={product.id} {...product} />
@@ -212,4 +273,4 @@ const Collection = () => {
   );
 };
 
-export default Collection;
+export default Collection;
