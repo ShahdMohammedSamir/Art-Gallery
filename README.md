@@ -1,4 +1,4 @@
-<img width="1920" height="700" alt="image" src="https://github.com/user-attachments/assets/e15c712b-9e26-4cd3-a478-f454047867aa" />
+<img width="600" height="600" alt="image" src="https://github.com/user-attachments/assets/e15c712b-9e26-4cd3-a478-f454047867aa" />
 
 # 🎨 Art Gallery — E‑commerce Website
 
